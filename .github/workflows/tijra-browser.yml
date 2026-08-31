@@ -24,14 +24,14 @@ jobs:
         run: npm install
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox webkit
-      - name: Run browser and mobile production QA
-        run: node qa/tijra-browser.mjs
+      - name: Run browser and mobile production QA v2
+        run: node qa/tijra-browser-v2.mjs
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tijra-browser-report
+          name: tijra-browser-report-v2
           path: |
-            artifacts/tijra-browser-report.*
-            artifacts/browser/**
+            artifacts/tijra-browser-v2.*
+            artifacts/browser-v2/**
           if-no-files-found: warn
