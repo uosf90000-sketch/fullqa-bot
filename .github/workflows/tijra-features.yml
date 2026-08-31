@@ -1,0 +1,31 @@
+name: Tijra Remaining Features QA
+
+on:
+  push:
+    paths:
+      - 'qa/tijra-features.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  features:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run production feature coverage campaign
+        run: node qa/tijra-features.mjs
+      - name: Upload feature evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-features-report
+          path: artifacts/tijra-features-report.*
+          if-no-files-found: warn
