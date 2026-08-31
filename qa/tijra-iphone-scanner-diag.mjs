@@ -1,0 +1,37 @@
+import fs from 'node:fs';
+import { webkit, devices } from 'playwright';
+fs.mkdirSync('artifacts/iphone-diag',{recursive:true});
+const BASE=(process.env.TARGET_URL||'https://tijra-production.up.railway.app').replace(/\/$/,'');
+const RUN=Date.now().toString(36), PW=`Diag!${RUN}pass`;
+const browser=await webkit.launch({headless:true});
+const ctx=await browser.newContext({...devices['iPhone 15']});
+const page=await ctx.newPage();
+await page.goto(`${BASE}/login?mode=register`,{waitUntil:'domcontentloaded'});
+await page.getByRole('button',{name:/^مورد أبيع للتجار$/}).click();
+await page.locator('#name').fill('QA iPhone Scanner');
+await page.locator('#businessName').fill(`QA iPhone Scanner ${RUN}`);
+await page.locator('#email').fill(`qa.iphone.diag.${RUN}@example.test`);
+await page.locator('#password').fill(PW);
+await page.getByRole('button',{name:'إنشاء الحساب والمتابعة'}).click();
+await page.waitForFunction(()=>location.pathname==='/marketplace/seller',{timeout:30000});
+const button=page.getByRole('button',{name:'مسح الباركود بالكاميرا'}).first();
+await button.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
+await page.waitForTimeout(500);
+const geom=await page.evaluate(()=>{
+ const b=document.querySelector('.barcodeScanButton');
+ const h=document.querySelector('.barcodeHelp');
+ const t=document.querySelector('.appTopbar');
+ const row=document.querySelector('.barcodeInputRow');
+ const rect=e=>e?(()=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,top:r.top,right:r.right,bottom:r.bottom,left:r.left,z:getComputedStyle(e).zIndex,position:getComputedStyle(e).position,pointerEvents:getComputedStyle(e).pointerEvents}})():null;
+ const br=b?.getBoundingClientRect(); const cx=br?br.left+br.width/2:0, cy=br?br.top+br.height/2:0;
+ const el=document.elementFromPoint(cx,cy);
+ return {viewport:{w:innerWidth,h:innerHeight,scrollY},button:rect(b),help:rect(h),topbar:rect(t),row:rect(row),center:{x:cx,y:cy},elementAtCenter:el?{tag:el.tagName,cls:el.className,text:(el.textContent||'').trim().slice(0,100)}:null};
+});
+console.log(JSON.stringify(geom,null,2));
+let click={ok:false,error:null};
+try{await button.click({timeout:8000});click.ok=true;await page.getByRole('dialog',{name:'ماسح الباركود'}).waitFor({timeout:5000})}catch(e){click.error=String(e)}
+await page.screenshot({path:'artifacts/iphone-diag/screen.png',fullPage:false});
+fs.writeFileSync('artifacts/iphone-diag/result.json',JSON.stringify({run:RUN,geom,click},null,2));
+fs.writeFileSync('artifacts/iphone-diag/result.md',`# iPhone scanner diagnostic\n\nClick: ${click.ok?'PASS':'FAIL'}\n\n\`\`\`json\n${JSON.stringify({geom,click},null,2)}\n\`\`\`\n`);
+await browser.close();
+if(!click.ok) process.exitCode=1;
