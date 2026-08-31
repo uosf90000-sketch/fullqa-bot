@@ -1,7 +1,8 @@
 import { chromium, firefox, webkit, devices } from 'playwright';
 
-const target = process.env.TARGET_URL;
-if (!target) throw new Error('TARGET_URL is required');
+const targetRaw = process.env.TARGET_URL;
+if (!targetRaw) throw new Error('TARGET_URL is required');
+const target: string = targetRaw;
 const maxPages = Number(process.env.QA_MAX_PAGES || 40);
 
 type Result = { id:string; status:'PASS'|'FAIL'|'BLOCKED'|'NOT_FOUND'; module:string; actual:string; url:string };
@@ -25,7 +26,7 @@ async function health() {
 async function discover() {
   const browser = await chromium.launch({ headless:true });
   const context = await browser.newContext({ ignoreHTTPSErrors:true });
-  const queue = [target];
+  const queue:string[] = [target];
   const seen = new Set<string>();
   try {
     while (queue.length && seen.size < maxPages) {
