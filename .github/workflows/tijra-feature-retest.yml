@@ -1,0 +1,26 @@
+name: Tijra Accounting OCR Retest
+on:
+  push:
+    paths: ['qa/tijra-feature-retest.trigger']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Run accounting and OCR retest
+        run: node qa/tijra-feature-retest.mjs
+      - name: Upload retest evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-feature-retest
+          path: artifacts/tijra-feature-retest.*
+          if-no-files-found: warn
