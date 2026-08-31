@@ -1,0 +1,29 @@
+name: Tijra Critical Picking Receive
+on:
+  push:
+    paths:
+      - 'qa/tijra-critical-picking-receive.mjs'
+      - 'qa/tijra-critical-picking-receive.trigger'
+      - '.github/workflows/tijra-critical-picking-receive.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Run critical picking receive journey
+        run: node qa/tijra-critical-picking-receive.mjs
+      - name: Upload critical journey evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-critical-picking-receive
+          path: artifacts/tijra-critical-picking-receive.*
+          if-no-files-found: warn
