@@ -1,0 +1,31 @@
+name: Tijra Business QA
+
+on:
+  push:
+    paths:
+      - 'qa/tijra-business.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  business:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run inventory tenant payroll campaign
+        run: node qa/tijra-business.mjs
+      - name: Upload business evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-business-report
+          path: artifacts/tijra-business-report.*
+          if-no-files-found: warn
