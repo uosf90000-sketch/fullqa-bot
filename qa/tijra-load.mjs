@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import { performance } from 'node:perf_hooks';
+const BASE=(process.env.TARGET_URL||'https://tijra-production.up.railway.app').replace(/\/$/,'');
+const stages=[10,25,50,75,100];
+const report={target:BASE,startedAt:new Date().toISOString(),stages:[],maxUsers:0,verdict:'PASS'};
+fs.mkdirSync('artifacts',{recursive:true});
+function pct(a,p){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.ceil(s.length*p)-1)];}
+async function one(path){const t=performance.now();try{const r=await fetch(BASE+path,{redirect:'manual',signal:AbortSignal.timeout(10000)});await r.arrayBuffer();return{status:r.status,ms:performance.now()-t};}catch{return{status:0,ms:performance.now()-t};}}
+for(const users of stages){const paths=['/api/health','/login','/register'];const rows=[];const start=performance.now();await Promise.all(Array.from({length:users},async(_,u)=>{for(let i=0;i<5;i++)rows.push(await one(paths[(u+i)%paths.length]));}));const ms=rows.map(x=>x.ms),total=rows.length,e5=rows.filter(x=>x.status===0||x.status>=500).length,p95=pct(ms,.95),p99=pct(ms,.99),elapsed=performance.now()-start;const stage={users,requests:total,elapsedMs:Math.round(elapsed),p95Ms:Math.round(p95),p99Ms:Math.round(p99),errors5xx:e5,errorRate:e5/total,statuses:Object.fromEntries([...new Set(rows.map(x=>x.status))].map(s=>[s,rows.filter(x=>x.status===s).length]))};report.stages.push(stage);report.maxUsers=users;console.log(JSON.stringify(stage));if(stage.errorRate>0.02||p95>3000){report.verdict='STOPPED';break;}await new Promise(r=>setTimeout(r,1500));}
+report.finishedAt=new Date().toISOString();fs.writeFileSync('artifacts/tijra-load-report.json',JSON.stringify(report,null,2));fs.writeFileSync('artifacts/tijra-load-report.md',[`# Tijra Load Test`,`Verdict: ${report.verdict}`,`Max users: ${report.maxUsers}`,...report.stages.map(s=>`${s.users} users | ${s.requests} requests | p95 ${s.p95Ms}ms | p99 ${s.p99Ms}ms | 5xx ${s.errors5xx}`)].join('\n'));if(report.verdict!=='PASS')process.exitCode=1;
