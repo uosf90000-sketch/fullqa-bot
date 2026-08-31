@@ -1,0 +1,31 @@
+name: Tijra Concurrency QA
+
+on:
+  push:
+    paths:
+      - 'qa/tijra-concurrency.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run concurrency race campaign
+        run: node qa/tijra-concurrency.mjs
+      - name: Upload concurrency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-concurrency-report
+          path: artifacts/tijra-concurrency-report.*
+          if-no-files-found: warn
