@@ -1,0 +1,37 @@
+name: Tijra Browser Mobile QA
+
+on:
+  push:
+    paths:
+      - 'qa/tijra-browser.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Run browser and mobile production QA
+        run: node qa/tijra-browser.mjs
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-browser-report
+          path: |
+            artifacts/tijra-browser-report.*
+            artifacts/browser/**
+          if-no-files-found: warn
