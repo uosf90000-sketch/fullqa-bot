@@ -1,0 +1,28 @@
+name: Tijra iPhone Scanner Diagnostic
+on:
+  push:
+    paths: ['qa/tijra-iphone-scanner-diag.trigger']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install
+      - run: npx playwright install --with-deps webkit
+      - name: Diagnose iPhone scanner hit target
+        run: node qa/tijra-iphone-scanner-diag.mjs
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-iphone-scanner-diag
+          path: artifacts/iphone-diag/**
+          if-no-files-found: warn
