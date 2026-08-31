@@ -1,0 +1,31 @@
+name: Tijra Controlled Load
+
+on:
+  push:
+    paths:
+      - 'qa/tijra-load.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run controlled read-only load
+        run: node qa/tijra-load.mjs
+      - name: Upload load evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-load-report
+          path: artifacts/tijra-load-report.*
+          if-no-files-found: warn
