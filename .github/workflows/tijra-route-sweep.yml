@@ -1,0 +1,29 @@
+name: Tijra Route Sweep
+on:
+  push:
+    paths:
+      - 'qa/tijra-route-sweep.mjs'
+      - 'qa/tijra-route-sweep.trigger'
+      - '.github/workflows/tijra-route-sweep.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Run final route sweep
+        run: node qa/tijra-route-sweep.mjs
+      - name: Upload route sweep evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-route-sweep
+          path: artifacts/tijra-route-sweep.*
+          if-no-files-found: warn
