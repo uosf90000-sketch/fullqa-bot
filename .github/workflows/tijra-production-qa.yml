@@ -1,0 +1,31 @@
+name: Tijra Production QA
+
+on:
+  push:
+    paths:
+      - 'qa/tijra-e2e.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run production E2E campaign
+        run: node qa/tijra-e2e.mjs
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-production-qa
+          path: artifacts/
+          if-no-files-found: warn
