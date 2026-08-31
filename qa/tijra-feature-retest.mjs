@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+fs.mkdirSync('artifacts',{recursive:true});
 const BASE=(process.env.TARGET_URL||'https://tijra-production.up.railway.app').replace(/\/$/,'');
 const RUN=Date.now().toString(36), PW=`Re!${RUN}123`;const checks=[];function ck(n,ok,a){checks.push({name:n,status:ok?'PASS':'FAIL',actual:String(a)});console.log(`${ok?'PASS':'FAIL'} | ${n} | ${a}`)}
 async function req(path,{method='GET',cookie,body,form,timeout=65000}={}){const h={};if(cookie)h.cookie=cookie;if(body!==undefined)h['content-type']='application/json';const r=await fetch(BASE+path,{method,headers:h,body:form??(body!==undefined?JSON.stringify(body):undefined),signal:AbortSignal.timeout(timeout)});const text=await r.text();let data=null;try{data=text?JSON.parse(text):null}catch{}return{r,text,data,cookie:r.headers.get('set-cookie')?.split(';')[0]||null}}
