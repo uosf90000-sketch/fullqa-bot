@@ -1,0 +1,31 @@
+name: Tijra Supplier Picking Navigation
+on:
+  push:
+    paths:
+      - 'qa/tijra-supplier-nav.mjs'
+      - 'qa/tijra-supplier-nav.trigger'
+      - '.github/workflows/tijra-supplier-nav.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-nav:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_URL: https://tijra-production.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Verify supplier picking navigation in browser
+        run: node qa/tijra-supplier-nav.mjs
+      - name: Upload navigation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tijra-supplier-nav
+          path: artifacts/supplier-nav/**
+          if-no-files-found: warn
