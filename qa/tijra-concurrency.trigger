@@ -1,1 +1,1 @@
-rerun 2026-08-31 after concurrency fixes
+third verification 2026-08-31 Prisma-safe locks
